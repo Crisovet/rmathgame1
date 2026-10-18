@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Math Game</title>
+<style>
+  :root { --bg:#f4f6fb; --card:#fff; --text:#1f2937; --accent:#4f46e5; --good:#16a34a; --bad:#dc2626; --muted:#6b7280; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111827; --card:#1f2937; --text:#f3f4f6; --accent:#818cf8; --good:#4ade80; --bad:#f87171; --muted:#9ca3af; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:var(--bg); color:var(--text); font-family:system-ui,sans-serif; padding:16px; }
+  .card { background:var(--card); border-radius:16px; padding:28px; width:100%; max-width:420px; box-shadow:0 8px 30px rgba(0,0,0,.12); text-align:center; }
+  h1 { margin:0 0 8px; }
+  .muted { color:var(--muted); }
+  .progress { height:8px; background:var(--bg); border-radius:99px; overflow:hidden; margin:16px 0; }
+  .bar { height:100%; background:var(--accent); width:0; transition:width .3s; }
+  .question { font-size:2.4rem; font-weight:700; margin:20px 0; }
+  input { width:100%; font-size:1.5rem; padding:12px; border:2px solid var(--muted); border-radius:10px; text-align:center; background:var(--bg); color:var(--text); }
+  input:focus { outline:none; border-color:var(--accent); }
+  button { margin-top:16px; width:100%; padding:14px; font-size:1.1rem; font-weight:600; border:none; border-radius:10px; background:var(--accent); color:#fff; cursor:pointer; }
+  button:hover { opacity:.9; }
+  .feedback { min-height:1.6em; margin-top:12px; font-weight:600; }
+  .good { color:var(--good); } .bad { color:var(--bad); }
+  .score { font-size:3rem; font-weight:800; color:var(--accent); margin:12px 0; }
+  .hidden { display:none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="start">
+    <h1>🧮 Math Game</h1>
+    <p class="muted">Answer 3 questions. Ready?</p>
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <div id="game" class="hidden">
+    <div class="muted" id="counter"></div>
+    <div class="progress"><div class="bar" id="bar"></div></div>
+    <div class="question" id="question"></div>
+    <input id="answer" type="number" inputmode="numeric" placeholder="Your answer">
+    <div class="feedback" id="feedback"></div>
+    <button id="submit" onclick="check()">Submit</button>
+  </div>
+
+  <div id="result" class="hidden">
+    <h1>Game Over!</h1>
+    <div class="score" id="score"></div>
+    <p id="message" class="muted"></p>
+    <button onclick="startGame()">Play Again</button>
+  </div>
+</div>
+
+<script>
+const TOTAL = 3;
+let current, score, correctAnswer, waiting;
+
+const $ = id => document.getElementById(id);
+const rand = (a, b) => Math.floor(Math.random() * (b - a + 1)) + a;
+
+function makeQuestion() {
+  const op = ['+', '-', '×'][rand(0, 2)];
+  let a = rand(2, 12), b = rand(2, 12);
+  if (op === '+') { a = rand(10, 50); b = rand(10, 50); return { text: `${a} + ${b}`, ans: a + b }; }
+  if (op === '-') { a = rand(20, 60); b = rand(1, 19); return { text: `${a} − ${b}`, ans: a - b }; }
+  return { text: `${a} × ${b}`, ans: a * b };
+}
+
+function startGame() {
+  current = 0; score = 0;
+  $('start').classList.add('hidden');
+  $('result').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  nextQuestion();
+}
+
+function nextQuestion() {
+  const q = makeQuestion();
+  correctAnswer = q.ans; waiting = false;
+  $('counter').textContent = `Question ${current + 1} of ${TOTAL}`;
+  $('bar').style.width = (current / TOTAL * 100) + '%';
+  $('question').textContent = q.text + ' = ?';
+  $('answer').value = ''; $('feedback').textContent = '';
+  $('submit').textContent = 'Submit';
+  $('answer').focus();
+}
+
+function check() {
+  if (waiting) return;
+  const val = $('answer').value;
+  if (val === '') return;
+  waiting = true;
+  const fb = $('feedback');
+  if (Number(val) === correctAnswer) { score++; fb.textContent = '✅ Correct!'; fb.className = 'feedback good'; }
+  else { fb.textContent = `❌ Wrong! Answer: ${correctAnswer}`; fb.className = 'feedback bad'; }
+  current++;
+  setTimeout(() => current >= TOTAL ? finish() : nextQuestion(), 1200);
+}
+
+function finish() {
+  $('bar').style.width = '100%';
+  $('game').classList.add('hidden');
+  $('result').classList.remove('hidden');
+  $('score').textContent = `${score} / ${TOTAL}`;
+  $('message').textContent = score === TOTAL ? '🌟 Perfect!' : score >= 2 ? '👍 Good job!' : '💪 Keep practicing!';
+}
+
+$('answer').addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+</script>
+</body>
+</html>
